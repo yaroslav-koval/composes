@@ -1,0 +1,138 @@
+services:
+  kafka1:
+    image: apache/kafka:latest
+    container_name: kafka1
+    hostname: kafka1
+    networks: [ multiple_kafka_brokers ]
+    ports:
+      - "9093:9093"
+    volumes:
+      - "kafka1_data:/var/lib/kafka/data"
+    environment:
+      # KRaft identity
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29093,2@kafka2:29093,3@kafka3:29093
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
+      # Listeners: internal (docker network), controller, and host
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka1:29092,CONTROLLER://kafka1:29093,PLAINTEXT_HOST://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:29092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # 3-broker dev defaults
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9093 --list >/dev/null 2>&1 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  kafka2:
+    image: apache/kafka:latest
+    container_name: kafka2
+    hostname: kafka2
+    networks: [ multiple_kafka_brokers ]
+    ports:
+      - "9094:9094"
+    volumes:
+      - "kafka2_data:/var/lib/kafka/data"
+    environment:
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29093,2@kafka2:29093,3@kafka3:29093
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka2:29092,CONTROLLER://kafka2:29093,PLAINTEXT_HOST://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:29092,PLAINTEXT_HOST://localhost:9094
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+#    depends_on:
+#      kafka1:
+#        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9094 --list >/dev/null 2>&1 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  kafka3:
+    image: apache/kafka:latest
+    container_name: kafka3
+    hostname: kafka3
+    networks: [ multiple_kafka_brokers ]
+    ports:
+      - "9095:9095"
+    volumes:
+      - "kafka3_data:/var/lib/kafka/data"
+    environment:
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka1:29093,2@kafka2:29093,3@kafka3:29093
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://kafka3:29092,CONTROLLER://kafka3:29093,PLAINTEXT_HOST://0.0.0.0:9095
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:29092,PLAINTEXT_HOST://localhost:9095
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+#    depends_on:
+#      kafka2:
+#        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9095 --list >/dev/null 2>&1 || exit 1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop:latest
+    container_name: kafdrop
+    restart: "no"
+    networks: [ multiple_kafka_brokers ]
+    ports:
+      - "9000:9000"
+    environment:
+      # Container-to-container traffic must use the internal listener, not localhost/host ports
+      KAFKA_BROKERCONNECT: "kafka1:29092,kafka2:29092,kafka3:29092"
+    depends_on:
+      kafka1:
+        condition: service_healthy
+      kafka2:
+        condition: service_healthy
+      kafka3:
+        condition: service_healthy
+
+networks:
+  multiple_kafka_brokers:
+    name: multiple_kafka_brokers
+
+volumes:
+  kafka1_data:
+  kafka2_data:
+  kafka3_data:
