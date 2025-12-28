@@ -1,0 +1,78 @@
+services:
+  postgres-primary:
+    image: bitnami/postgresql:latest
+    container_name: postgres-primary
+    networks: [ postgres_cluster ]
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRESQL_USERNAME: postgres
+      POSTGRESQL_PASSWORD: postgres
+      POSTGRESQL_DATABASE: app
+      POSTGRESQL_REPLICATION_MODE: master
+      POSTGRESQL_REPLICATION_USER: repl_user
+      POSTGRESQL_REPLICATION_PASSWORD: repl_password
+    volumes:
+      - postgres_primary_data:/bitnami/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ] 
+      interval: 5s
+      timeout: 5s
+      retries: 6
+
+  postgres-replica1:
+    image: bitnami/postgresql:latest
+    container_name: postgres-replica1
+    networks: [ postgres_cluster ]
+    depends_on:
+      - postgres-primary
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRESQL_USERNAME: postgres
+      POSTGRESQL_PASSWORD: postgres
+      POSTGRESQL_REPLICATION_MODE: slave
+      POSTGRESQL_REPLICATION_USER: repl_user
+      POSTGRESQL_REPLICATION_PASSWORD: repl_password
+      POSTGRESQL_MASTER_HOST: postgres-primary
+      POSTGRESQL_MASTER_PORT_NUMBER: 5432
+    volumes:
+      - postgres_replica1_data:/bitnami/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -h localhost" ]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+
+  postgres-replica2:
+    image: bitnami/postgresql:latest
+    container_name: postgres-replica2
+    networks: [ postgres_cluster ]
+    depends_on:
+      - postgres-primary
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRESQL_USERNAME: postgres
+      POSTGRESQL_PASSWORD: postgres
+      POSTGRESQL_REPLICATION_MODE: slave
+      POSTGRESQL_REPLICATION_USER: repl_user
+      POSTGRESQL_REPLICATION_PASSWORD: repl_password
+      POSTGRESQL_MASTER_HOST: postgres-primary
+      POSTGRESQL_MASTER_PORT_NUMBER: 5432
+    volumes:
+      - postgres_replica2_data:/bitnami/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -h localhost" ]
+      interval: 5s
+      timeout: 5s
+      retries: 6
+
+networks:
+  postgres_cluster:
+    name: postgres_cluster
+
+volumes:
+  postgres_primary_data:
+  postgres_replica1_data:
+  postgres_replica2_data:
