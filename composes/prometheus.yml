@@ -1,0 +1,11 @@
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: inbalance-prometheus
+    ports:
+      - "9095:9090"
+    networks:
+      - inbalance
+
+networks:
+  inbalance:
