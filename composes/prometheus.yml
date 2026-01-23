@@ -1,9 +1,13 @@
+# no time for ready solution, better here https://github.com/vegasbrianc/prometheus/blob/master/docker-compose.yml
+
 services:
   prometheus:
     image: prom/prometheus:latest
     restart: on-failure
     ports:
       - "9090:9090"
+    volumes:
+      - /prometheus
     networks:
       - grafana
 
