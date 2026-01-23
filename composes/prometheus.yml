@@ -1,11 +1,11 @@
 services:
   prometheus:
     image: prom/prometheus:latest
-    container_name: inbalance-prometheus
+    restart: on-failure
     ports:
-      - "9095:9090"
+      - "9090:9090"
     networks:
-      - inbalance
+      - grafana
 
 networks:
-  inbalance:
+  grafana:

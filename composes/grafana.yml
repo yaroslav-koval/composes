@@ -1,11 +1,11 @@
 services:
   grafana:
     image: grafana/grafana:latest
-    container_name: inbalance-grafana
+    restart: on-failure
     ports:
-      - "3005:3000"
+      - "3000:3000"
     networks:
-      - inbalance
+      - grafana
 
 networks:
-  inbalance:
+  grafana:
